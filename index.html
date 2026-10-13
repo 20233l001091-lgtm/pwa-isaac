@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leyendas</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#38003c">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #1d001f 0%, #38003c 50%, #110013 100%);
+      color: #333;
+    }
+    
+    header {
+      background-color: #38003c;
+      color: #00ff87;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border-bottom: 3px solid #00ff87;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; gap: 10px; color: #ffffff; }
+    .icon-btn { background: none; border: none; color: #00ff87; font-size: 1.6rem; cursor: pointer; transition: transform 0.2s; }
+    .icon-btn:hover { transform: scale(1.15); }
+    
+    #view-selection {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      justify-content: center;
+      align-content: center;
+      gap: 45px;
+      padding: 40px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .avatar-card {
+      width: 220px !important;
+      height: 220px !important;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 6px solid #00ff87;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      cursor: pointer;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+      background-color: #38003c;
+      justify-self: center;
+    }
+    
+    .avatar-card:hover {
+      transform: scale(1.08);
+      border-color: #ffffff;
+      box-shadow: 0 15px 35px rgba(0, 255, 135, 0.6);
+    }
+    
+    .avatar-card img { width: 100%; height: 100%; object-fit: cover; }
+
+    #view-feed {
+      display: none;
+      padding: 30px 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      margin-top: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    
+    .feed-container { display: flex; gap: 25px; align-items: flex-start; }
+    .profile-avatar-large {
+      width: 240px; height: 240px; border-radius: 50%; overflow: hidden;
+      border: 5px solid #38003c; flex-shrink: 0; background-color: #e2e8f0;
+    }
+    .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+    .tweets-list { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; }
+    .tweet-card {
+      background: white; padding: 20px; border-radius: 12px; position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 5px solid #38003c;
+    }
+    .tweet-user { font-weight: bold; color: #38003c; margin-bottom: 8px; }
+    .tweet-text { font-size: 1rem; color: #444; }
+
+    /* Toast de estado sync */
+    #estado-toast {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #00ff87;
+      color: #38003c;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 300;
+    }
+
+    #modal-tweet {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 200;
+    }
+    .modal-content {
+      background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px;
+    }
+    .modal-content textarea { width: 100%; height: 100px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; resize: none; font-family: inherit; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .btn-action { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-primary { background: #38003c; color: #00ff87; }
+    .btn-secondary { background: #e0e0e0; color: #333; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button id="btn-back" class="icon-btn" style="display: none;" title="Regresar">
+      <i class="fa-solid fa-right-from-bracket fa-flip-horizontal"></i>
+    </button>
+    <h1 id="header-title">Chatea con tu futbolista favorito</h1>
+    <div style="display: flex; gap: 15px;">
+      <button id="btn-notif" class="icon-btn" style="display: none;" title="Notificación"><i class="fa-solid fa-bell"></i></button>
+      <button id="btn-new-tweet" class="icon-btn" style="display: none;" title="Publicar"><i class="fa-solid fa-pen-to-square"></i></button>
+    </div>
+  </header>
+
+  <main id="view-selection"></main>
+
+  <main id="view-feed">
+    <div class="feed-container">
+      <div class="profile-avatar-large">
+        <img id="feed-avatar-img" src="" alt="Avatar">
+      </div>
+      <div class="tweets-list" id="tweets-container"></div>
+    </div>
+  </main>
+
+  <div id="estado-toast"></div>
+
+  <div id="modal-tweet">
+    <div class="modal-content">
+      <h3>Nuevo Estado / Publicación</h3>
+      <textarea id="tweet-input" placeholder="¿Qué estás pensando?"></textarea>
+      <div class="modal-actions">
+        <button id="btn-cancel-tweet" class="btn-action btn-secondary">Cancelar</button>
+        <button id="btn-send-tweet" class="btn-action btn-primary">Publicar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
